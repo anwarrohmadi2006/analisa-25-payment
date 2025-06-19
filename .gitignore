@@ -136,6 +136,9 @@ node_modules/
 .env
 .env.test
 
+# Local documentation files (not for public repository)
+README_PROMPTS.md
+
 # IDE
 .vscode/
 .idea/
