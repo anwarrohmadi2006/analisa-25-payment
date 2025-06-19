@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="app-title"></title>
+    <!-- Memuat Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Memuat Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .file-input-label { cursor: pointer; display: inline-flex; align-items: center; padding: 0.75rem 1.25rem; border-radius: 0.5rem; background-color: #f3f4f6; color: #374151; border: 1px dashed #d1d5db; transition: background-color 0.2s; }
+        .file-input-label:hover { background-color: #e5e7eb; }
+        input[type="file"] { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { border: 2px solid rgba(255, 255, 255, 0.3); border-top-color: white; border-radius: 50%; width: 1rem; height: 1rem; animation: spin 0.8s linear infinite; }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+
+    <div class="w-full max-w-2xl">
+        <!-- Notifikasi (Awalnya tersembunyi) -->
+        <div id="notification" class="hidden p-4 mb-4 rounded-lg text-center transition-all duration-300"></div>
+
+        <!-- LANGKAH 1: Halaman Instruksi Pembayaran -->
+        <div id="intro-card" class="bg-white p-6 sm:p-8 rounded-2xl shadow-lg transition-all duration-300">
+            <div class="text-center">
+                <h1 id="intro-title" class="text-2xl sm:text-3xl font-bold text-gray-800"></h1>
+                <p id="intro-subtitle" class="text-gray-500 mt-2"></p>
+            </div>
+            <div class="mt-8 space-y-4 text-gray-700">
+                <h2 id="intro-instructions-title" class="font-semibold text-lg"></h2>
+                <ol id="intro-instructions-list" class="list-decimal list-inside space-y-2"></ol>
+                <div class="flex justify-center pt-4">
+                    <div class="text-center">
+                         <img id="qris-image-intro" src="" alt="Kode QRIS Pembayaran" class="rounded-lg shadow-md w-56 h-auto" onerror="this.onerror=null;this.src='https://placehold.co/224x224/e2e8f0/333?text=Gagal+Muat+QRIS';">
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <button type="button" id="goToFormButton" class="w-full flex items-center justify-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition"></button>
+            </div>
+        </div>
+
+        <!-- LANGKAH 2: Kartu Form Utama (Awalnya tersembunyi) -->
+        <div id="form-card" class="hidden bg-white p-6 sm:p-8 rounded-2xl shadow-lg transition-all duration-300">
+            <div class="text-center mb-8">
+                <h1 id="form-title" class="text-2xl sm:text-3xl font-bold text-gray-800"></h1>
+                <p id="form-subtitle" class="text-gray-500 mt-2"></p>
+            </div>
+            <form id="confirmationForm" novalidate>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="md:col-span-1"><label id="label-nama" for="nama" class="block text-sm font-medium text-gray-700 mb-1"></label><input type="text" id="nama" name="nama" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" required><p id="nama-error" class="text-red-500 text-xs mt-1 hidden"></p></div>
+                    <div class="md:col-span-1"><label id="label-nim" for="nim" class="block text-sm font-medium text-gray-700 mb-1"></label><input type="text" id="nim" name="nim" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" required inputmode="numeric"><p id="nim-error" class="text-red-500 text-xs mt-1 hidden"></p></div>
+                    <div class="md:col-span-1"><label id="label-email" for="email" class="block text-sm font-medium text-gray-700 mb-1"></label><input type="email" id="email" name="email" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" required><p id="email-error" class="text-red-500 text-xs mt-1 hidden"></p></div>
+                    <div class="md:col-span-1"><label id="label-whatsapp" for="whatsapp" class="block text-sm font-medium text-gray-700 mb-1"></label><input type="tel" id="whatsapp" name="whatsapp" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500" required><p id="whatsapp-error" class="text-red-500 text-xs mt-1 hidden"></p></div>
+                    <div class="md:col-span-2 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-lg"><p id="label-transfer-amount" class="text-sm text-green-800 font-semibold"></p><p id="jumlah-unik" class="text-3xl font-bold text-green-700 mt-1">Rp 0</p><p id="label-transfer-desc" class="text-xs text-green-600 mt-1"></p><input type="hidden" id="referensi" name="referensi"></div>
+                    <div class="md:col-span-2 mt-4 p-4 border rounded-lg">
+                        <p id="label-scan-qris" class="text-center font-semibold text-gray-700 mb-4"></p>
+                        <div class="flex justify-center mb-6">
+                           <img id="qris-image-form" src="" alt="Kode QRIS Pembayaran" class="rounded-lg shadow-md w-48 h-auto" onerror="this.onerror=null;this.src='https://placehold.co/192x192/e2e8f0/333?text=Gagal+Muat+QRIS';">
+                        </div>
+                        <div class="mt-4"><label id="label-bukti" class="block text-sm font-medium text-gray-700 mb-1"></label><label for="bukti" class="file-input-label"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-gray-500" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd" /></svg><span id="label-pilih-file"></span></label><input type="file" id="bukti" name="bukti" accept="image/png, image/jpeg, application/pdf" required><p id="file-info" class="text-gray-500 text-xs mt-2"></p><p id="bukti-error" class="text-red-500 text-xs mt-1 hidden"></p></div>
+                    </div>
+                    <div class="md:col-span-2 flex items-start"><div class="flex items-center h-5"><input id="setuju" name="setuju" type="checkbox" class="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500" required></div><div class="ml-3 text-sm"><label id="label-setuju" for="setuju" class="font-medium text-gray-700"></label></div></div>
+                </div>
+                <div class="mt-8 pt-6 border-t border-gray-200 flex flex-col gap-4">
+                    <button type="button" id="whatsappButton" class="w-full flex items-center justify-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition"></button>
+                    <button type="submit" id="submitButton" class="w-full flex items-center justify-center px-6 py-3 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition opacity-50 cursor-not-allowed" disabled>
+                        <span id="submit-text"></span>
+                        <div id="spinner" class="spinner hidden ml-2"></div>
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <div id="success-card" class="hidden bg-white p-8 rounded-2xl shadow-lg text-center transition-all duration-300">
+            <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100"><svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" /></svg></div>
+            <h2 id="success-title" class="text-2xl font-bold text-gray-800 mt-6"></h2>
+            <p id="success-subtitle" class="text-gray-600 mt-2"></p>
+            <button id="resetButton" class="mt-8 w-full max-w-xs mx-auto px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"></button>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // =================================================================
+        // --- PUSAT KONFIGURASI ---
+        // =================================================================
+        const config = {
+            // Pengaturan Umum
+            eventName: "Ajang Perkenalan Sains Data (Analisa'25)",
+            htm: 60000, 
+            waNumber: '62895386208710',
+            // URL Gambar QRIS dari Google Drive. Pastikan link berformat 'uc?export=view&id='.
+            qrisImageUrl: 'https://drive.google.com/uc?export=view&id=1SYXZruKlznw71U6VIrw3yjVwCWcp5TDW',
+            // Email untuk menerima data (opsional)
+            adminEmail: 'admin@analisa25.com',
+            
+            // Semua Teks untuk Antarmuka Pengguna (UI)
+            text: {
+                appTitle: "Konfirmasi Pembayaran Analisa'25",
+                // Halaman Intro
+                intro: {
+                    title: "Cara Pembayaran",
+                    instructionsTitle: "Instruksi Pembayaran:",
+                    instructions: [
+                        "Lakukan scan pada kode QRIS di bawah ini menggunakan e-wallet atau mobile banking.",
+                        "Masukkan nominal transfer sesuai yang akan tertera di formulir berikutnya. <strong class='text-green-600'>Penting: Nominal transfer akan ditambahkan kode unik dari NIM Anda.</strong>",
+                        "Simpan bukti transfer Anda (screenshot).",
+                        "Setelah membayar, klik tombol di bawah untuk melanjutkan ke formulir konfirmasi."
+                    ],
+                    buttonGoToForm: "Lanjutkan ke Formulir Konfirmasi"
+                },
+                // Halaman Formulir
+                form: {
+                    title: "Formulir Konfirmasi",
+                    subtitle: "Pastikan semua data diisi dengan benar.",
+                    labelNama: "Nama Lengkap",
+                    labelNim: "NIM",
+                    labelEmail: "Alamat Email",
+                    labelWhatsapp: "No. WhatsApp Aktif",
+                    labelTransferAmount: "Mohon transfer sejumlah ini:",
+                    labelTransferDesc: "Jumlah ini didapat dari Harga Tiket + 2 digit terakhir NIM Anda.",
+                    labelScanQris: "Scan QRIS di bawah untuk membayar",
+                    labelBukti: "Upload Bukti Transfer (Wajib)",
+                    labelPilihFile: "Pilih file...",
+                    labelSetuju: "Saya menyatakan data ini benar dan telah membayar.",
+                    buttonWhatsapp: "1. Kirim Konfirmasi ke WhatsApp",
+                    buttonSubmit: "2. Kirim ke Admin"
+                },
+                // Halaman Sukses
+                success: {
+                    title: "Konfirmasi Terkirim!",
+                    subtitle: "Terima kasih. Data Anda telah berhasil dikirim ke WhatsApp. Silakan tunggu konfirmasi dari admin.",
+                    buttonReset: "Kembali ke Halaman Awal"
+                },
+                // Lain-lain
+                fileInfoDefault: "File: Belum ada file yang dipilih. (Maks: 2MB)",
+                buttonWhatsappSent: "Terkirim ke WhatsApp",
+                buttonSubmitSending: "Mengirim..."
+            },
+            // Teks Placeholder untuk Input
+            placeholders: {
+                nama: "Nama Anda",
+                nim: "Contoh: 23123456",
+                email: "email@contoh.com",
+                whatsapp: "08xxxxxxxxxx"
+            }
+        };
+        // =================================================================
+        // --- AKHIR KONFIGURASI ---
+        // =================================================================
+
+        // --- Referensi Elemen DOM ---
+        const elements = {
+            introCard: document.getElementById('intro-card'),
+            formCard: document.getElementById('form-card'),
+            successCard: document.getElementById('success-card'),
+            goToFormButton: document.getElementById('goToFormButton'),
+            qrisImageIntro: document.getElementById('qris-image-intro'),
+            qrisImageForm: document.getElementById('qris-image-form'),
+            form: document.getElementById('confirmationForm'),
+            nimInput: document.getElementById('nim'),
+            jumlahUnikEl: document.getElementById('jumlah-unik'),
+            referensiInput: document.getElementById('referensi'),
+            buktiInput: document.getElementById('bukti'),
+            fileInfo: document.getElementById('file-info'),
+            whatsappButton: document.getElementById('whatsappButton'),
+            submitButton: document.getElementById('submitButton'),
+            spinner: document.getElementById('spinner'),
+            submitText: document.getElementById('submit-text'),
+            resetButton: document.getElementById('resetButton'),
+            notification: document.getElementById('notification')
+        };
+        
+        // --- Fungsi untuk mengisi UI dari Konfigurasi ---
+        function populateUI() {
+            document.title = config.text.appTitle;
+            // Intro
+            document.getElementById('intro-title').textContent = config.text.intro.title;
+            document.getElementById('intro-subtitle').textContent = config.eventName;
+            document.getElementById('intro-instructions-title').textContent = config.text.intro.instructionsTitle;
+            const instructionList = document.getElementById('intro-instructions-list');
+            instructionList.innerHTML = '';
+            config.text.intro.instructions.forEach(item => {
+                const li = document.createElement('li');
+                li.innerHTML = item;
+                instructionList.appendChild(li);
+            });
+            elements.goToFormButton.textContent = config.text.intro.buttonGoToForm;
+            // Form
+            document.getElementById('form-title').textContent = config.text.form.title;
+            document.getElementById('form-subtitle').textContent = config.text.form.subtitle;
+            document.getElementById('label-nama').textContent = config.text.form.labelNama;
+            document.getElementById('label-nim').textContent = config.text.form.labelNim;
+            document.getElementById('label-email').textContent = config.text.form.labelEmail;
+            document.getElementById('label-whatsapp').textContent = config.text.form.labelWhatsapp;
+            document.getElementById('label-transfer-amount').textContent = config.text.form.labelTransferAmount;
+            document.getElementById('label-transfer-desc').textContent = config.text.form.labelTransferDesc;
+            document.getElementById('label-scan-qris').textContent = config.text.form.labelScanQris;
+            document.getElementById('label-bukti').textContent = config.text.form.labelBukti;
+            document.getElementById('label-pilih-file').textContent = config.text.form.labelPilihFile;
+            elements.fileInfo.textContent = config.text.fileInfoDefault;
+            document.getElementById('label-setuju').textContent = config.text.form.labelSetuju;
+            elements.whatsappButton.textContent = config.text.form.buttonWhatsapp;
+            elements.submitText.textContent = config.text.form.buttonSubmit;
+            // Placeholders
+            document.getElementById('nama').placeholder = config.placeholders.nama;
+            elements.nimInput.placeholder = config.placeholders.nim;
+            document.getElementById('email').placeholder = config.placeholders.email;
+            document.getElementById('whatsapp').placeholder = config.placeholders.whatsapp;
+            // Success
+            document.getElementById('success-title').textContent = config.text.success.title;
+            document.getElementById('success-subtitle').textContent = config.text.success.subtitle;
+            elements.resetButton.textContent = config.text.success.buttonReset;
+        }
+
+        // --- Inisialisasi Aplikasi ---
+        function init() {
+            populateUI();
+            elements.qrisImageIntro.src = config.qrisImageUrl;
+            elements.qrisImageForm.src = config.qrisImageUrl;
+
+            elements.goToFormButton.addEventListener('click', showFormCard);
+            elements.nimInput.addEventListener('input', hitungJumlahUnik);
+            elements.buktiInput.addEventListener('change', updateFileInfo);
+            elements.whatsappButton.addEventListener('click', handleWhatsAppConfirmation);
+            elements.form.addEventListener('submit', handleFormSubmit);
+            elements.resetButton.addEventListener('click', resetFlow);
+            
+            hitungJumlahUnik(); 
+        }
+
+        // --- Navigasi & Alur ---
+        function showFormCard() {
+            elements.introCard.classList.add('hidden');
+            elements.formCard.classList.remove('hidden');
+        }
+
+        function handleWhatsAppConfirmation() {
+            if (!validateForm(true, true)) {
+                showNotification('Harap lengkapi Nama, NIM, Email, dan No. WA sebelum lanjut.', 'error');
+                return;
+            }
+            const message = generateWaMessage();
+            const waUrl = `https://wa.me/${config.waNumber}?text=${message}`;
+            window.open(waUrl, '_blank');
+            
+            elements.submitButton.disabled = false;
+            elements.submitButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            elements.whatsappButton.disabled = true;
+            elements.whatsappButton.classList.add('opacity-50', 'cursor-not-allowed');
+            elements.whatsappButton.textContent = config.text.buttonWhatsappSent;
+        }
+        
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            if (!validateForm(true, false)) {
+                showNotification('Formulir belum lengkap. Pastikan semua data terisi dan bukti transfer sudah diunggah.', 'error');
+                return;
+            }
+            setLoading(true);
+            
+            // Simulasi pengiriman untuk GitHub Pages (tanpa backend)
+            const formData = new FormData(elements.form);
+            const formObject = Object.fromEntries(formData.entries());
+            
+            // Buat pesan WhatsApp dengan detail lengkap
+            const detailedMessage = generateDetailedWaMessage(formObject);
+            const waUrl = `https://wa.me/${config.waNumber}?text=${detailedMessage}`;
+            
+            // Simulasi delay pengiriman
+            setTimeout(() => {
+                setLoading(false);
+                window.open(waUrl, '_blank');
+                showNotification('Data telah dikirim via WhatsApp. Silakan kirim bukti transfer secara manual ke admin.', 'success');
+                setTimeout(() => {
+                    handleSuccess();
+                }, 2000);
+            }, 1500);
+        }
+
+        function resetFlow() {
+            elements.successCard.classList.add('hidden');
+            elements.introCard.classList.remove('hidden');
+            elements.form.reset();
+            hitungJumlahUnik();
+            elements.fileInfo.textContent = config.text.fileInfoDefault;
+            elements.submitButton.disabled = true;
+            elements.submitButton.classList.add('opacity-50', 'cursor-not-allowed');
+            elements.whatsappButton.disabled = false;
+            elements.whatsappButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            elements.whatsappButton.textContent = config.text.form.buttonWhatsapp;
+        }
+
+        // --- Fungsi Logika & Helper ---
+        const generateWaMessage = () => {
+            const formData = new FormData(elements.form);
+            const data = Object.fromEntries(formData.entries());
+            return encodeURIComponent(`*KONFIRMASI PEMBAYARAN - ${config.eventName}*\n\nHalo, saya ingin mengonfirmasi pembayaran.\n\n- *Nama*: ${data.nama}\n- *NIM*: ${data.nim}\n- *Email*: ${data.email}\n- *No. WA*: ${data.whatsapp}\n\nSaya telah membayar sejumlah *Rp ${parseInt(data.referensi || 0).toLocaleString('id-ID')}*. Mohon lampirkan bukti transfer setelah pesan ini terkirim.\n\nTerima kasih.`.trim());
+        };
+        
+        const generateDetailedWaMessage = (formData) => {
+            const fileName = elements.buktiInput.files[0] ? elements.buktiInput.files[0].name : 'File tidak tersedia';
+            return encodeURIComponent(`*KONFIRMASI PEMBAYARAN LENGKAP - ${config.eventName}*\n\n✅ *Data Pendaftar:*\n- *Nama*: ${formData.nama}\n- *NIM*: ${formData.nim}\n- *Email*: ${formData.email}\n- *No. WhatsApp*: ${formData.whatsapp}\n\n💰 *Detail Pembayaran:*\n- *Harga Tiket*: Rp ${config.htm.toLocaleString('id-ID')}\n- *Kode Unik (2 digit NIM)*: ${formData.nim.slice(-2)}\n- *Total Transfer*: Rp ${parseInt(formData.referensi || 0).toLocaleString('id-ID')}\n\n📎 *Bukti Transfer*: ${fileName}\n\n*CATATAN PENTING:*\nBukti transfer akan dikirim secara terpisah karena keterbatasan sistem web. Mohon kirim screenshot/foto bukti transfer setelah pesan ini.\n\n*Status*: ✅ Form telah disubmit\n*Waktu*: ${new Date().toLocaleString('id-ID')}\n\nTerima kasih atas partisipasinya! 🙏`.trim());
+        };
+        
+        const hitungJumlahUnik = () => {
+            const nim = elements.nimInput.value.trim();
+            const hargaTiket = config.htm;
+            const kodeUnik = (nim.length >= 2 && /^\d+$/.test(nim)) ? parseInt(nim.slice(-2), 10) : 0;
+            const totalUnik = hargaTiket + kodeUnik;
+            elements.jumlahUnikEl.textContent = `Rp ${totalUnik.toLocaleString('id-ID')}`;
+            elements.referensiInput.value = totalUnik;
+        };
+        
+        function updateFileInfo() {
+            if (this.files.length > 0) {
+                const fileName = this.files[0].name;
+                const fileSize = (this.files[0].size / 1024 / 1024).toFixed(2);
+                if (fileSize > 2) {
+                    showFieldError('bukti', 'Ukuran file tidak boleh > 2MB.'); 
+                    this.value = '';
+                    elements.fileInfo.textContent = config.text.fileInfoDefault;
+                } else {
+                    hideFieldError('bukti');
+                    elements.fileInfo.textContent = `File: ${fileName} (${fileSize} MB)`;
+                }
+            }
+        }
+        
+        const validateForm = (checkRequired, skipFileAndCheckbox = false) => {
+            let isFormValid = true;
+            elements.form.querySelectorAll('input, select, textarea').forEach(field => {
+                if (checkRequired && !field.required) return;
+                if (skipFileAndCheckbox && (field.type === 'file' || field.type === 'checkbox')) return;
+                if (!validateField(field)) isFormValid = false;
+            });
+            return isFormValid;
+        };
+        
+        const validateField = (field) => {
+            let isValid = true;
+            const errorEl = document.getElementById(`${field.id}-error`);
+            if (errorEl) errorEl.classList.add('hidden');
+            
+            if (field.type === 'checkbox' && !field.checked) {
+                isValid = false; 
+            }
+            else if (field.type === 'file' && field.required && field.files.length === 0) {
+                showFieldError(field.id, 'Anda harus mengunggah bukti transfer.'); 
+                isValid = false;
+            } else if (field.required && !field.value.trim()) {
+                showFieldError(field.id, 'Field ini wajib diisi.'); 
+                isValid = false;
+            }
+            return isValid;
+        };
+        
+        const showFieldError = (fieldId, message) => {
+            const errorEl = document.getElementById(`${fieldId}-error`);
+            if (errorEl) { 
+                errorEl.textContent = message; 
+                errorEl.classList.remove('hidden'); 
+            }
+        };
+        
+        const hideFieldError = (fieldId) => {
+            const errorEl = document.getElementById(`${fieldId}-error`);
+            if (errorEl) { 
+                errorEl.classList.add('hidden'); 
+            }
+        };
+        
+        const setLoading = (isLoading) => {
+            elements.submitButton.disabled = isLoading;
+            elements.spinner.classList.toggle('hidden', !isLoading);
+            elements.submitText.textContent = isLoading ? config.text.buttonSubmitSending : config.text.form.buttonSubmit;
+            elements.submitButton.classList.toggle('cursor-not-allowed', isLoading);
+        };
+        
+        const handleSuccess = () => { 
+            setLoading(false); 
+            elements.formCard.classList.add('hidden'); 
+            elements.successCard.classList.remove('hidden'); 
+        };
+        
+        const handleError = (error) => { 
+            setLoading(false); 
+            showNotification(`Terjadi kesalahan: ${error.message}`, 'error'); 
+        };
+        
+        const showNotification = (message, type = 'error') => {
+            elements.notification.textContent = message;
+            elements.notification.className = 'p-4 mb-4 rounded-lg text-center';
+            elements.notification.classList.add(
+                type === 'error' ? 'bg-red-100' : 'bg-green-100', 
+                type === 'error' ? 'text-red-800' : 'text-green-800'
+            );
+            elements.notification.classList.remove('hidden');
+            window.scrollTo(0, 0);
+            setTimeout(() => { 
+                elements.notification.classList.add('hidden'); 
+            }, 5000);
+        };
+        
+        init();
+    });
+    </script>
+</body>
+</html>
+
