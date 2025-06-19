@@ -1,0 +1,50 @@
+{
+  "name": "analisa-25-payment",
+  "version": "1.0.0",
+  "description": "Sistem Pembayaran Analisa'25 dengan integrasi Google Sheets dan Google Drive",
+  "main": "backend.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "backend": "node backend.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "setup": "npm install && node -e \"console.log('✅ Setup completed! Please configure your .env file.');\"",
+    "create-headers": "node -e \"const backend = require('./backend.js'); const b = new backend(); b.initialize().then(() => b.createSpreadsheetHeaders()).then(() => console.log('✅ Headers created!'));\"",
+    "stats": "node -e \"const backend = require('./backend.js'); const b = new backend(); b.initialize().then(() => b.getPaymentStats()).then(() => console.log('✅ Stats retrieved!'));\"",
+    "validate-env": "node -e \"require('dotenv').config(); console.log('🔧 Environment variables loaded:'); console.log('- Event:', process.env.EVENT_NAME); console.log('- HTM:', process.env.HTM); console.log('- WhatsApp:', process.env.WA_NUMBER);\""
+  },
+  "keywords": [
+    "payment",
+    "google-sheets",
+    "google-drive",
+    "whatsapp",
+    "event-registration"
+  ],
+  "author": "Analisa'25 Team",
+  "license": "MIT",
+  "dependencies": {
+    "googleapis": "^128.0.0",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "multer": "^1.4.5-lts.1",
+    "cors": "^2.8.5",
+    "helmet": "^7.1.0",
+    "express-rate-limit": "^7.1.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  },
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/analisa25/payment-system.git"
+  },
+  "bugs": {
+    "url": "https://github.com/analisa25/payment-system/issues"
+  },
+  "homepage": "https://github.com/analisa25/payment-system#readme"
+}
+
